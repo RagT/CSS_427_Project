@@ -14,11 +14,10 @@ void setup() {
 }
 
 void draw() {
-  
+  readFromSerial();  
 }
 
 public void keyPressed() {
-  println("Key code pressed: " + keyCode);
   if(key == CODED) {
     switch(keyCode) {
       case LEFT:
@@ -52,6 +51,10 @@ public void keyPressed() {
       //right
       msg[0] = 'D';
       break;
+    case 'f':
+      //flash led's
+      msg[0] = 'F';
+      break;
     case '=':
       //increase power
       msg[0] = '+';
@@ -66,7 +69,6 @@ public void keyPressed() {
 }
 
 public void keyReleased() {
-  println("Key code Released: " + keyCode);
   //stop
   if(key == CODED) {
     switch(keyCode) {
@@ -104,5 +106,11 @@ public void keyReleased() {
   }
   msg[1] = 0; // 0 for key released
   port.write(msg); // send key info over bluetooth
-  println(msg[1]);
+}
+
+public void readFromSerial() {
+  String serialString = port.readStringUntil('\n');
+  if(serialString != null) {
+   println(serialString); 
+  }
 }
