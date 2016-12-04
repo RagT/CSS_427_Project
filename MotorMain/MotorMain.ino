@@ -54,16 +54,28 @@ void loop(){
 //        }
         break;
       case 'W':
+        Serial2.println("Forward command for small bot recieved by big bot");
+        Serial2.println("Sending forward command to small bot");
         Serial1.write(msg,2);
+        readSerial1();
         break;
       case 'A':
+        Serial2.println("Turn left command for small bot recieved by big bot");
+        Serial2.println("Sending turn left command to small bot");
         Serial1.write(msg,2);
+        readSerial1();
         break;
       case 'S':
+        Serial2.println("Backward command for small bot recieved by big bot");
+        Serial2.println("Sending backward command to small bot");
         Serial1.write(msg,2);
+        readSerial1();
         break;
       case 'D':
+        Serial2.println("Turn right command for small bot recieved by big bot");
+        Serial2.println("Sending turn right command to small bot");
         Serial1.write(msg,2);
+        readSerial1();
         break;
       case 'l':
         if(msg[1] == 1) {
@@ -105,22 +117,50 @@ void loop(){
 void forward() {
   leftServo.writeMicroseconds(1500 - power);
   rightServo.writeMicroseconds(1500 + power); 
+  Serial2.println("Forward command recieved by big bot.");
 }
 
 void backward(){
   leftServo.writeMicroseconds(1500 + power);
   rightServo.writeMicroseconds(1500 - power);  
+  Serial2.println("Backward command recieved by big bot.");
 }
 
 void stop(){
   leftServo.writeMicroseconds(1500);
   rightServo.writeMicroseconds(1500);
-  delay(200);
+  Serial2.println("Stop command recieved by big bot");
 }
 
 void turn(int direction) {
    leftServo.writeMicroseconds(1500 + (power * direction));
    rightServo.writeMicroseconds(1500 + (power * direction));
+   if(direction == LEFT) {
+      Serial2.println("Turn left command recieved by big bot");
+   } else {
+      Serial2.println("Turn right command recieved by big bot");
+   }
+ }
+
+void readSerial1(){
+  char ch = Serial1.read();
+  switch(ch) {
+    case 'l':
+      Serial2.println("Turn left command recieved by small bot");
+      break;
+    case 'r':
+      Serial2.println("Turn right command recieved by small bot");
+      break;
+    case 'b':
+      Serial2.println("Backward command recieved by small bot");
+      break;
+    case 'f':
+      Serial2.println("Forward command recieved by small bot");
+      break;  
+    case 's':
+      Serial2.println("Stop command recieved by small bot");
+      break;
+  }
 }
 
 void setPower(int newPower) {
@@ -129,26 +169,26 @@ void setPower(int newPower) {
   }
 }
 
-void flash() {
-  blinkRed();
-  blinkBlue();
-}
-
-
-void blinkRed(){
-  digitalWrite(redLed, HIGH);
-  delay(20);
-  digitalWrite(redLed, LOW);
-  delay(20);
-}
-
-
-void blinkBlue() {
-  digitalWrite(blueLed, HIGH);
-  delay(50);
-  digitalWrite(blueLed, LOW);
-  delay(50);
-}
+//void flash() {
+//  blinkRed();
+//  blinkBlue();
+//}
+//
+//
+//void blinkRed(){
+//  digitalWrite(redLed, HIGH);
+//  delay(20);
+//  digitalWrite(redLed, LOW);
+//  delay(20);
+//}
+//
+//
+//void blinkBlue() {
+//  digitalWrite(blueLed, HIGH);
+//  delay(50);
+//  digitalWrite(blueLed, LOW);
+//  delay(50);
+//}
 
 //LED and light sensor
 void photocellRead() {

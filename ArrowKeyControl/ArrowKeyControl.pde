@@ -111,6 +111,6 @@ public void keyReleased() {
 public void readFromSerial() {
   String serialString = port.readStringUntil('\n');
   if(serialString != null) {
-   println(serialString); 
+   print(serialString); 
   }
 }

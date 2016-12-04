@@ -8,7 +8,7 @@ Servo rightServo;
 
 const byte led = LED_BUILTIN;
 const byte button = 9;
-byte power = 150;
+byte power = 200;
 const int maxPower = 200;
 
 void setup() {
@@ -68,32 +68,32 @@ void loop(){
     }
 }
 
-void blinkLed(){
-  digitalWrite(led, HIGH);
-  delay(1000);
-  digitalWrite(led, LOW);
-  delay(1000);
-}
-
 void forward() {
   leftServo.writeMicroseconds(1500 - power);
   rightServo.writeMicroseconds(1500 + power); 
+  Serial.write('f');
 }
 
 void backward(){
   leftServo.writeMicroseconds(1500 + power);
-  rightServo.writeMicroseconds(1500 - power);  
+  rightServo.writeMicroseconds(1500 - power);
+  Serial.write('b');  
 }
 
 void stop(){
   leftServo.writeMicroseconds(1500);
   rightServo.writeMicroseconds(1500);
-  delay(200);
+  Serial.write('s');
 }
 
 void turn(int direction) {
    leftServo.writeMicroseconds(1500 + (power * direction));
    rightServo.writeMicroseconds(1500 + (power * direction));
+   if(direction == LEFT) {
+      Serial.write('l');
+   } else {
+      Serial.println('r');
+   }
 }
 
 void setPower(int newPower) {
