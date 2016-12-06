@@ -19,9 +19,9 @@ int adjustedLightLevel;
 const byte button = 9;
 byte power = 150;
 const int maxPower = 200;
+char sensorMsg[2];
 
 void setup() {
-  Serial.begin(9600);
   Serial1.begin(9600);
   Serial2.begin(9600);
 //  pinMode(led, OUTPUT); 
@@ -110,6 +110,16 @@ void loop(){
         break;
       case '-':
         setPower(power - 25);
+        break;
+      case 't':
+        //This operation may take some time so stop the robot until it is over
+        stop();
+        Serial1.write(msg,2);
+        //Read
+        String temperature = Serial1.readStringUntil('\n');
+        String humidity = Serial1.readStringUntil('\n');
+        Serial2.println(temperature);
+        Serial2.println(humidity);
         break;
     }
 }

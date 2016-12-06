@@ -10,7 +10,7 @@ void setup() {
   
   println(Serial.list());
   
-  port = new Serial(this, Serial.list()[0], 9600);
+  port = new Serial(this, Serial.list()[1], 9600);
 }
 
 void draw() {
@@ -62,6 +62,10 @@ public void keyPressed() {
     case '-':
       //decrease power
       msg[0] = '-';
+      break;
+    case 't':
+      //get sensor readings
+      msg[0] = 't';
       break;
   }
   msg[1] = 1; // 1 for key pressed

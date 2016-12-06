@@ -1,8 +1,16 @@
 #include <Servo.h>
+#include <dht.h>
+
+
+#define DHT11_PIN 7
 
 const int RIGHT = 1;
 const int LEFT = -1;
 
+float temperature = 0.0;
+float humidity = 0.0;
+
+dht DHT;
 Servo leftServo;
 Servo rightServo;
 
@@ -65,6 +73,9 @@ void loop(){
       case '-':
         setPower(power - 25);
         break;
+      case 't':
+        readSensorData();
+        break;
     }
 }
 
@@ -101,46 +112,20 @@ void setPower(int newPower) {
     power = (byte) newPower;
   }
 }
-//void turn(int direction, int degrees) {
-//  if(degrees > 0) {
-//   float turnConstant = 7.1 * (200 / power);
-//   leftServo.writeMicroseconds(1500 + (power * direction));
-//   rightServo.writeMicroseconds(1500 + (power * direction));
-//   delay(degrees * turnConstant);
-//   stop(); 
-//  }
-//}
 
-
-//void processCommand(String command) {
-//  int spaceIndex = command.indexOf(' ');
-//  String commandType = command.substring(0, spaceIndex);
-//  String parameters = command.substring(spaceIndex + 1);
-//  int param = parameters.toInt();
-//  
-//  if(commandType == "forward") {
-//    forwardTime(param);
-//    //Serial.println("Going forward");  
-//  } else if(commandType == "backward") {
-//    //Serial.println("Going backward");
-//    backwardTime(param);
-//  } else if(commandType == "turn") {
-//     int secondSpace = parameters.indexOf(" "); 
-//     String turnDirection = parameters.substring(0, secondSpace);
-//     Serial.println(turnDirection);
-//     int turnDegrees = parameters.substring(secondSpace).toInt();
-//     Serial.println(turnDegrees);
-//     if(turnDirection == "right") {
-//      turn(RIGHT, turnDegrees);
-//     } else if (turnDirection == "left") {
-//      turn(LEFT, turnDegrees);
-//     } else {
-//      //Serial.println("Invalid command");
-//     }
-//  } else if(commandType == "setPower") {
-//    setPower(param);
-//  } else {
-//    //Serial.println("Invalid command.");
-//  }
-//}
+void readSensorData(){
+  //Stop bot since reading can take time
+  stop();
+  int chk = DHT.read11(DHT11_PIN);
+  //Reads data if sensor ready
+  if(chk == DHTLIB_OK) {
+    temperature = DHT.temperature;
+    humidity = DHT.humidity;
+  }
+  //Sends temperature and humidity readings over bluetooth
+  Serial.print("Temperature(smallBot)=");
+  Serial.println(temperature);
+  Serial.print("Humidity(smallBot)=");
+  Serial.println(humidity);
+}
 
