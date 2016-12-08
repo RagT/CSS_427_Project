@@ -2,7 +2,7 @@
 #include <dht.h>
 
 
-#define DHT11_PIN 7
+#define DHT22_PIN 7
 
 const int RIGHT = 1;
 const int LEFT = -1;
@@ -22,7 +22,6 @@ const int maxPower = 200;
 void setup() {
   Serial.begin(9600);
   pinMode(led, OUTPUT); 
-  pinMode(button, INPUT_PULLUP);
   leftServo.attach(5);
   rightServo.attach(6);
 }
@@ -74,7 +73,9 @@ void loop(){
         setPower(power - 25);
         break;
       case 't':
-        readSensorData();
+        if(msg[1] == 1) {
+          readSensorData();
+        }
         break;
     }
 }
@@ -115,17 +116,22 @@ void setPower(int newPower) {
 
 void readSensorData(){
   //Stop bot since reading can take time
-  stop();
-  int chk = DHT.read11(DHT11_PIN);
+  leftServo.writeMicroseconds(1500);
+  rightServo.writeMicroseconds(1500);
+  int chk = DHT.read22(DHT22_PIN);
   //Reads data if sensor ready
   if(chk == DHTLIB_OK) {
     temperature = DHT.temperature;
     humidity = DHT.humidity;
   }
+  
+  float fTemp = fahrenheitTemp(temperature);
   //Sends temperature and humidity readings over bluetooth
-  Serial.print("Temperature(smallBot)=");
-  Serial.println(temperature);
-  Serial.print("Humidity(smallBot)=");
-  Serial.println(humidity);
+  Serial.println(temperature, DEC);
+  Serial.println(humidity, DEC);
+}
+
+float fahrenheitTemp(float celsius) {
+  return (celsius * 1.8) + 32; 
 }
 

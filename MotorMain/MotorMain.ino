@@ -1,13 +1,23 @@
+#include <SimpleTimer.h>
+#include <dht.h>
 #include <Servo.h>
+#include <LiquidCrystal.h>
+
+#define DHT22_PIN 52 //temp and humidity sensor pin
 
 const int RIGHT = 1;
 const int LEFT = -1;
 
 Servo leftServo;
 Servo rightServo;
+dht DHT;
+SimpleTimer timer;
+int timerID;
+LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
+int backLight = 13;
 
 int photoRPin = 15;
-int led = 33;
+int led = 51;
 int redLed = 52;
 int blueLed = 50;
 int lightLevel;
@@ -15,32 +25,47 @@ int minLevel;
 int maxLevel;
 int adjustedLightLevel;
 
-//const byte led = LED_BUILTIN;
-const byte button = 9;
 byte power = 150;
 const int maxPower = 200;
-char sensorMsg[2];
+
+//Stores sensor readings
+float temperature = 0.0;
+float humidity = 0.0;
 
 void setup() {
+  Serial.begin(9600);
   Serial1.begin(9600);
-  Serial2.begin(9600);
-//  pinMode(led, OUTPUT); 
-//  pinMode(button, INPUT_PULLUP);
+  pinMode(led, OUTPUT); 
 //  pinMode(redLed, OUTPUT);
 //  pinMode(blueLed, OUTPUT);
-//  pinMode(led, OUTPUT);
   leftServo.attach(24);
   rightServo.attach(26);
 //  digitalWrite(redLed, LOW);
 //  digitalWrite(blueLed, LOW);
+    pinMode(backLight, OUTPUT);          //set pin 13 as output
+  analogWrite(backLight, 150);       
+  
+  lcd.begin(16,2);                    // columns, rows. size of display
+  lcd.clear();                        // clear the screen
+  lcd.setCursor(0,0);                 // set cursor to column 0, row 0 (first row)
+  lcd.print("CSS 427 Project");       // input your text here
+  lcd.setCursor(0,1);                 // move cursor down one
+  lcd.print("Controlled Car");      //input your text here
+  //Serial.begin(9600);
+  lightLevel = analogRead(photoRPin);  
+  minLevel = lightLevel-20;
+  maxLevel = lightLevel;
+  //timer.setInterval(10000, showDisplay);
 }
 
 void loop(){
   bool msgRecieved = false;
   char msg[2];
+  //timer.run();
   while(!msgRecieved) {
-    while(Serial2.available()) {
-      Serial2.readBytes(msg,2);
+    
+    while(Serial.available()) {
+      Serial.readBytes(msg,2);
       msgRecieved = true;
     }
   }
@@ -49,31 +74,28 @@ void loop(){
   //Handle command
     switch(msg[0]) {
       case 'F':
-//        if (msg[1] == 1) {
-//          flash();
-//        }
         break;
       case 'W':
-        Serial2.println("Forward command for small bot recieved by big bot");
-        Serial2.println("Sending forward command to small bot");
+        Serial.println("Forward command for small bot recieved by big bot");
+        Serial.println("Sending forward command to small bot");
         Serial1.write(msg,2);
         readSerial1();
         break;
       case 'A':
-        Serial2.println("Turn left command for small bot recieved by big bot");
-        Serial2.println("Sending turn left command to small bot");
+        Serial.println("Turn left command for small bot recieved by big bot");
+        Serial.println("Sending turn left command to small bot");
         Serial1.write(msg,2);
         readSerial1();
         break;
       case 'S':
-        Serial2.println("Backward command for small bot recieved by big bot");
-        Serial2.println("Sending backward command to small bot");
+        Serial.println("Backward command for small bot recieved by big bot");
+        Serial.println("Sending backward command to small bot");
         Serial1.write(msg,2);
         readSerial1();
         break;
       case 'D':
-        Serial2.println("Turn right command for small bot recieved by big bot");
-        Serial2.println("Sending turn right command to small bot");
+        Serial.println("Turn right command for small bot recieved by big bot");
+        Serial.println("Sending turn right command to small bot");
         Serial1.write(msg,2);
         readSerial1();
         break;
@@ -107,19 +129,36 @@ void loop(){
         break;
       case '+':
         setPower(power + 25);
+        Serial1.write(msg,2);
         break;
       case '-':
         setPower(power - 25);
+        Serial1.write(msg,2);
         break;
       case 't':
-        //This operation may take some time so stop the robot until it is over
-        stop();
-        Serial1.write(msg,2);
-        //Read
-        String temperature = Serial1.readStringUntil('\n');
-        String humidity = Serial1.readStringUntil('\n');
-        Serial2.println(temperature);
-        Serial2.println(humidity);
+        if(msg[1] == 1) {
+          //stop servos
+          leftServo.writeMicroseconds(1500);
+          rightServo.writeMicroseconds(1500);
+
+          //Get sensor data for big bot also displays on lcd
+          checkTempandHum();
+          
+          //Request small bot for sensor data
+          Serial1.write(msg,2);
+
+          //Get small bot's sensor data and print to serial monitor
+          float smallBotTemp = Serial1.readStringUntil('\n').toFloat();
+          float smallBotHum = Serial1.readStringUntil('\n').toFloat();
+          Serial.print("Temperature(smallBot) = ");
+          Serial.print(smallBotTemp);
+          Serial.print("C/");
+          Serial.print(fahrenheitTemp(smallBotTemp));
+          Serial.println("F");
+          Serial.print("Humidity(smallBot) = ");
+          Serial.print(smallBotHum);
+          Serial.println("%");
+        }
         break;
     }
 }
@@ -127,28 +166,28 @@ void loop(){
 void forward() {
   leftServo.writeMicroseconds(1500 - power);
   rightServo.writeMicroseconds(1500 + power); 
-  Serial2.println("Forward command recieved by big bot.");
+  Serial.println("Forward command recieved by big bot.");
 }
 
 void backward(){
   leftServo.writeMicroseconds(1500 + power);
   rightServo.writeMicroseconds(1500 - power);  
-  Serial2.println("Backward command recieved by big bot.");
+  Serial.println("Backward command recieved by big bot.");
 }
 
 void stop(){
   leftServo.writeMicroseconds(1500);
   rightServo.writeMicroseconds(1500);
-  Serial2.println("Stop command recieved by big bot");
+  Serial.println("Stop command recieved by big bot");
 }
 
 void turn(int direction) {
    leftServo.writeMicroseconds(1500 + (power * direction));
    rightServo.writeMicroseconds(1500 + (power * direction));
    if(direction == LEFT) {
-      Serial2.println("Turn left command recieved by big bot");
+      Serial.println("Turn left command recieved by big bot");
    } else {
-      Serial2.println("Turn right command recieved by big bot");
+      Serial.println("Turn right command recieved by big bot");
    }
  }
 
@@ -156,21 +195,22 @@ void readSerial1(){
   char ch = Serial1.read();
   switch(ch) {
     case 'l':
-      Serial2.println("Turn left command recieved by small bot");
+      Serial.println("Turn left command recieved by small bot");
       break;
     case 'r':
-      Serial2.println("Turn right command recieved by small bot");
+      Serial.println("Turn right command recieved by small bot");
       break;
     case 'b':
-      Serial2.println("Backward command recieved by small bot");
+      Serial.println("Backward command recieved by small bot");
       break;
     case 'f':
-      Serial2.println("Forward command recieved by small bot");
+      Serial.println("Forward command recieved by small bot");
       break;  
     case 's':
-      Serial2.println("Stop command recieved by small bot");
+      Serial.println("Stop command recieved by small bot");
       break;
   }
+  Serial.println();
 }
 
 void setPower(int newPower) {
@@ -179,26 +219,7 @@ void setPower(int newPower) {
   }
 }
 
-//void flash() {
-//  blinkRed();
-//  blinkBlue();
-//}
-//
-//
-//void blinkRed(){
-//  digitalWrite(redLed, HIGH);
-//  delay(20);
-//  digitalWrite(redLed, LOW);
-//  delay(20);
-//}
-//
-//
-//void blinkBlue() {
-//  digitalWrite(blueLed, HIGH);
-//  delay(50);
-//  digitalWrite(blueLed, LOW);
-//  delay(50);
-//}
+
 
 //LED and light sensor
 void photocellRead() {
@@ -209,21 +230,11 @@ void photocellRead() {
   if(maxLevel < lightLevel) {
     maxLevel = lightLevel;
   }
-
-
-
-
   adjustedLightLevel = map(lightLevel, minLevel, maxLevel, 0, 100);
-
-
-
 
    Serial1.println(adjustedLightLevel);
    //delay(200);
 }
-
-
-
 
 void checkLightLevel() {
   if(adjustedLightLevel >= 70) {
@@ -232,3 +243,47 @@ void checkLightLevel() {
     digitalWrite(led, LOW);
   }
 }
+
+void checkTempandHum() {
+  int chk = DHT.read22(DHT22_PIN);
+  
+  //Reads data if sensor ready
+  if(chk == DHTLIB_OK) {
+    temperature = DHT.temperature;
+    humidity = DHT.humidity;
+  }
+  showDisplay();
+  float fTemp = fahrenheitTemp(temperature);
+  Serial.println();
+  Serial.print("Temperature(bigBot)= ");
+  Serial.print(temperature);
+  Serial.print("C/");
+  Serial.print(fTemp);
+  Serial.println("F");
+  Serial.print("Humidity(bigBot) = ");
+  Serial.print(humidity);
+  Serial.println("%");
+  Serial.println();
+}
+
+float fahrenheitTemp(float celsius) {
+  return (celsius * 1.8) + 32; 
+}
+
+//Display
+void showDisplay() {
+  lcd.display();     
+  lcd.setCursor(0,0);
+  lcd.print("Temp:    ");
+  lcd.print(round(temperature));
+  lcd.print("C/");
+  lcd.print(round(fahrenheitTemp(temperature)));
+  lcd.print("F");
+  lcd.setCursor(0,1);
+  lcd.print("Humidity: ");
+  lcd.print(humidity);
+  lcd.print("%");
+}
+
+
+
