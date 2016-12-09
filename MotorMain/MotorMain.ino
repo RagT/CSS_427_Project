@@ -18,8 +18,8 @@ int backLight = 13;
 
 int photoRPin = 15;
 int led = 51;
-int redLed = 52;
-int blueLed = 50;
+int redLed = 6;
+int blueLed = 5;
 int lightLevel;
 int minLevel;
 int maxLevel;
@@ -42,7 +42,7 @@ void setup() {
   rightServo.attach(26);
 //  digitalWrite(redLed, LOW);
 //  digitalWrite(blueLed, LOW);
-    pinMode(backLight, OUTPUT);          //set pin 13 as output
+  pinMode(backLight, OUTPUT);          //set pin 13 as output
   analogWrite(backLight, 150);       
   
   lcd.begin(16,2);                    // columns, rows. size of display
@@ -51,19 +51,17 @@ void setup() {
   lcd.print("CSS 427 Project");       // input your text here
   lcd.setCursor(0,1);                 // move cursor down one
   lcd.print("Controlled Car");      //input your text here
-  //Serial.begin(9600);
   lightLevel = analogRead(photoRPin);  
   minLevel = lightLevel-20;
   maxLevel = lightLevel;
-  //timer.setInterval(10000, showDisplay);
 }
 
 void loop(){
   bool msgRecieved = false;
   char msg[2];
-  //timer.run();
   while(!msgRecieved) {
-    
+    photocellRead();
+    checkLightLevel();    
     while(Serial.available()) {
       Serial.readBytes(msg,2);
       msgRecieved = true;
@@ -127,14 +125,22 @@ void loop(){
           stop();
         }
         break;
-      case '+':
-        setPower(power + 25);
-        Serial1.write(msg,2);
-        break;
-      case '-':
-        setPower(power - 25);
-        Serial1.write(msg,2);
-        break;
+//      case '+':
+//        if(msg[1] == 1) {
+//          Serial.println("Decrease power command recieved by big bot");
+//          setPower(power + 50);
+//          Serial1.write(msg,2);
+//          readSerial1();
+//        }
+//        break;
+//      case '-':
+//        if(msg[1] == 1) {
+//          Serial.println("Decrease power command recieved by big bot");
+//          setPower(power - 50);
+//          Serial1.write(msg,2);
+//          readSerial1();
+//        }
+//        break;
       case 't':
         if(msg[1] == 1) {
           //stop servos
@@ -209,17 +215,20 @@ void readSerial1(){
     case 's':
       Serial.println("Stop command recieved by small bot");
       break;
+//    case '+':
+//      Serial.println("Increase power command recieved by small bot.");
+//      break;
+//    case '-':
+//      Serial.println("Decrease power command recieved by small bot.");
   }
   Serial.println();
 }
 
-void setPower(int newPower) {
+void setPower(byte newPower) {
   if(power > 0 && power <= maxPower) {
-    power = (byte) newPower;
+    power = newPower;
   }
 }
-
-
 
 //LED and light sensor
 void photocellRead() {
@@ -231,13 +240,10 @@ void photocellRead() {
     maxLevel = lightLevel;
   }
   adjustedLightLevel = map(lightLevel, minLevel, maxLevel, 0, 100);
-
-   Serial1.println(adjustedLightLevel);
-   //delay(200);
 }
 
 void checkLightLevel() {
-  if(adjustedLightLevel >= 70) {
+  if(adjustedLightLevel <= 45) {
     digitalWrite(led, HIGH);
   } else {
     digitalWrite(led, LOW);

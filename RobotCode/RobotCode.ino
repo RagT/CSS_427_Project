@@ -66,12 +66,18 @@ void loop(){
           stop();
         }
         break;
-      case '+':
-        setPower(power + 25);
-        break;
-      case '-':
-        setPower(power - 25);
-        break;
+//      case '+':
+//        if(msg[1] == 1) {
+//          setPower(power + 25);
+//          Serial.write('+');
+//        }
+//        break;
+//      case '-':
+//        if(msg[1] == 1) {
+//          setPower(power - 25);
+//          Serial.write('-');
+//        }
+//        break;
       case 't':
         if(msg[1] == 1) {
           readSensorData();
@@ -108,9 +114,9 @@ void turn(int direction) {
    }
 }
 
-void setPower(int newPower) {
+void setPower(byte newPower) {
   if(power > 0 && power <= maxPower) {
-    power = (byte) newPower;
+    power = newPower;
   }
 }
 
